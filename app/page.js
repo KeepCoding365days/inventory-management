@@ -23,7 +23,6 @@ useEffect(()=>{
   updateInventory()
 },[])
 
-
 useEffect(()=>{
 
   let temp=[]
