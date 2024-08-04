@@ -1,15 +1,44 @@
-'use client'
-import { Box, Typography,Modal,Stack,TextField,Button } from "@mui/material"
-import { useState,useEffect } from "react"
+"use client"
+import dynamic from "next/dynamic"
+import { Box, Typography,Modal,Stack,TextField,Button, Input } from "@mui/material"
+import { useState,useEffect, use } from "react"
 import { firestore, } from "@/firebase"
 import {collection,doc,getDocs,query,setDoc, deleteDoc, getDoc} from 'firebase/firestore'
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableContainer from '@mui/material/TableContainer';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import Paper from '@mui/material/Paper';
 
 export default function Home(){
+const [search,setSearch]=useState('')
 const [inventory,setInventory]=useState([])
+const [load_inv,setLoad_inv]=useState([])
 const [open,setOpen]=useState(false)
 const [itemName,setItemName]=useState('')
 
+useEffect(()=>{
+  updateInventory()
+},[])
 
+
+useEffect(()=>{
+
+  let temp=[]
+  for (let i =0;i<load_inv.length;i++){
+    if (load_inv[i].name.toLowerCase().includes(search.toLowerCase())){
+      temp.push(load_inv[i]);
+    }
+  }
+  setInventory(temp)
+},[search]);
+
+
+const updateSearch=(event)=>{
+  setSearch(event.target.value);
+}
 const updateInventory= async() =>{
   const snapshot= query(collection(firestore,'inventory'));
   const docs= await getDocs(snapshot);
@@ -18,6 +47,7 @@ const updateInventory= async() =>{
     inventoryList.push({name:doc.id, ...doc.data()})
   });
   setInventory(inventoryList)
+  setLoad_inv(inventoryList)
 
 };
 const addItem = async(item) =>{
@@ -63,7 +93,7 @@ const style = {
   flexDirection: 'column',
   gap: 3,
 };
-  updateInventory()
+
   return (
     <Box
     width="100vw"
@@ -81,7 +111,7 @@ const style = {
       aria-describedby="modal-modal-description"
     >
       <Box sx={style}>
-        <Typography id="modal-modal-title" variant="h6" component="h2">
+        <Typography id="modal-modal-title" variant="h6" component="h2" color="Black">
           Add Item
         </Typography>
         <Stack width="100%" direction={'row'} spacing={2}>
@@ -123,31 +153,41 @@ const style = {
         </Typography>
       </Box>
       <Stack width="800px" height="300px" spacing={2} overflow={'auto'}>
+      <input
+        type="text"
+        placeholder="Search Item"
+        value={search}
+        onChange={updateSearch}
+        ></input>
+      <TableContainer component={Paper}>
+      <Table sx={{ minWidth: 650 }} aria-label="simple table">
+        <TableHead>
+          <TableRow>
+            <TableCell>Name</TableCell>
+            <TableCell align="right">Quantity</TableCell>
+            <TableCell align="right">Add</TableCell>
+            <TableCell align="right">Remove</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          
         {inventory.map(({name, quantity}) => (
-          <Box
-            key={name}
-            width="100%"
-            minHeight="150px"
-            display={'flex'}
-            justifyContent={'space-between'}
-            alignItems={'center'}
-            bgcolor={'#f0f0f0'}
-            paddingX={5}
-          >
-            <Typography variant={'h3'} color={'#333'} textAlign={'center'}>
-              {name.charAt(0).toUpperCase() + name.slice(1)}
-            </Typography>
-            <Typography variant={'h3'} color={'#333'} textAlign={'center'}>
-              Quantity: {quantity}
-            </Typography>
-            <Button variant="contained" onClick={() => addItem(name)}>
-              Add
-            </Button>
-            <Button variant="contained" onClick={() => removeItem(name)}>
-              Remove
-            </Button>
-          </Box>
+          <TableRow
+          key={name}
+          sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+        >
+          <TableCell component="th" scope="row">
+            {name}
+          </TableCell>
+          <TableCell align="right">{quantity}</TableCell>
+          <TableCell align="right"><Button variant="contained" onClick={() => addItem(name)}>Add</Button></TableCell>
+          <TableCell align="right"><Button variant="contained" onClick={()=> removeItem(name)}>Remove</Button></TableCell>
+        </TableRow>
+         
         ))}
+        </TableBody>
+        </Table>
+        </TableContainer>
       </Stack>
     </Box>
   </Box>
